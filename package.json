@@ -1,0 +1,31 @@
+{
+  "name": "sandbox-orchestrator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rakshit588/sandbox-orchestrator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Rakshit588/sandbox-orchestrator/issues"
+  },
+  "homepage": "https://github.com/Rakshit588/sandbox-orchestrator#readme",
+  "dependencies": {
+    "@kubernetes/client-node": "^2.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
