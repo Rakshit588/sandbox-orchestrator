@@ -23,4 +23,11 @@ async function createSandboxService(sandboxId) {
   return response;
 }
 
-module.exports = { createSandboxService };
+async function deleteSandboxService(sandboxId) {
+  await coreApi.deleteNamespacedService({
+    name: `sandbox-${sandboxId}`,
+    namespace: 'default',
+  });
+}
+
+module.exports = { createSandboxService, deleteSandboxService };

@@ -28,4 +28,12 @@ async function createSandboxPod(sandboxId) {
   return response;
 }
 
-module.exports = { createSandboxPod };
+// Diye gaye sandboxId ka Pod delete karta hai
+async function deleteSandboxPod(sandboxId) {
+  await coreApi.deleteNamespacedPod({
+    name: `sandbox-${sandboxId}`,
+    namespace: 'default',
+  });
+}
+
+module.exports = { createSandboxPod, deleteSandboxPod };

@@ -40,4 +40,11 @@ async function createSandboxIngress(sandboxId) {
   return response;
 }
 
-module.exports = { createSandboxIngress };
+async function deleteSandboxIngress(sandboxId) {
+  await networkingApi.deleteNamespacedIngress({
+    name: `sandbox-${sandboxId}`,
+    namespace: 'default',
+  });
+}
+
+module.exports = { createSandboxIngress, deleteSandboxIngress };
