@@ -20,7 +20,7 @@ io.on('connection', (socket) => {
   console.log('New terminal connection:', socket.id);
 
   // ek naya real shell process spawn kar raha hu - windows pe powershell.exe use karunga
-  const shell = pty.spawn('powershell.exe', [], {
+  const shell = pty.spawn('bash', [], {
     name: 'xterm-color',
     cols: 80,
     rows: 24,
