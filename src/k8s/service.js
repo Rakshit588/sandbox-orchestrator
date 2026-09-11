@@ -12,7 +12,10 @@ async function createSandboxService(sandboxId) {
       // Selector — ye batata hai "kaunse Pods ko target karna hai"
       // Jo bhi Pod ka label 'app: sandbox-<id>' hoga, wahi is Service ke through accessible hoga
       selector: { app: `sandbox-${sandboxId}` },
-      ports: [{ port: 80, targetPort: 5173 }], // 5173 = Vite ka default dev server port
+      ports: [
+        { name: 'preview', port: 80, targetPort: 5173 }, // 5173 = Vite ka default dev server port
+        { name: 'agent', port: 4000, targetPort: 4000 },
+      ], 
     },
   };
 

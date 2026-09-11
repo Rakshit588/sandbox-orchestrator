@@ -2,7 +2,7 @@
 FROM node:20-alpine
 
 # setting working directory inside the container
-WORKDIR /app
+WORKDIR /build
 
 # only copying package files - isse Docker caching better hoti hai
 COPY package*.json ./
@@ -14,6 +14,6 @@ COPY . .
 # vite dev server jis port pe chalta hai
 EXPOSE 5173
 
-# container start hote hi ye command chalegi - vite dev server start karega
-# --host zaroori hai taaki container ke bahar se bhi access ho sake
-CMD ["npm", "run", "dev", "--", "--host"]
+# build ke time files /build me hain - 
+# - container start hote hi inhe shared volume (/app) me copy karunga, phir vite start karunga
+CMD sh -c "cp -r /build/* /app/ 2>/dev/null; cp -r /build/.* /app/ 2>/dev/null; cd /app && npm run dev -- --host"

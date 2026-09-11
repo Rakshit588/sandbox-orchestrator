@@ -5,7 +5,7 @@ FROM node:20-slim
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 # setting working directory inside the container
-WORKDIR /app
+WORKDIR /build
 
 # only copying package files first - better caching ke liye
 COPY package*.json ./
@@ -17,5 +17,5 @@ COPY . .
 # terminal server jis port pe chalta hai
 EXPOSE 4000
 
-# container start hote hi server chalega
-CMD ["node", "server.js"]
+# build ke time files /build me hain - container start hote hi inhe shared volume (/app) me copy karunga, phir server start karunga
+CMD sh -c "cp -r /build/* /app/ 2>/dev/null; cp -r /build/.* /app/ 2>/dev/null; cd /build && node server.js"

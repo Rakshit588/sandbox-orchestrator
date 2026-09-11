@@ -9,10 +9,10 @@ async function createSandboxIngress(sandboxId) {
       name: `sandbox-${sandboxId}`,
     },
     spec: {
-        ingressClassName: 'nginx', //konsa Ingress Controller use kare
+      ingressClassName: 'nginx',
       rules: [
         {
-          // Ye subdomain jo humne Stage 2 me Acrylic DNS se resolve karna set kiya tha
+          // preview subdomain - sandbox ke andar chal rahe vite server ke liye
           host: `${sandboxId}.preview.localhost`,
           http: {
             paths: [
@@ -21,8 +21,26 @@ async function createSandboxIngress(sandboxId) {
                 pathType: 'Prefix',
                 backend: {
                   service: {
-                    name: `sandbox-${sandboxId}`, // wahi Service jo humne banaya
-                    port: { number: 80 },
+                    name: `sandbox-${sandboxId}`,
+                    port: { number: 80 }, // service ka preview port
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          // agent subdomain - comm-agent (terminal) ke liye
+          host: `${sandboxId}.agent.localhost`,
+          http: {
+            paths: [
+              {
+                path: '/',
+                pathType: 'Prefix',
+                backend: {
+                  service: {
+                    name: `sandbox-${sandboxId}`,
+                    port: { number: 4000 }, // service ka agent port
                   },
                 },
               },
