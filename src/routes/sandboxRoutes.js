@@ -4,6 +4,7 @@ const router = express.Router();
 const { createSandboxPod, deleteSandboxPod } = require('../k8s/pod');
 const { createSandboxService, deleteSandboxService } = require('../k8s/service');
 const { createSandboxIngress, deleteSandboxIngress } = require('../k8s/ingress');
+const { coreApi } = require('../k8s/client');
 
 // naya sandbox banata hai - random id generate karke pod, service, aur ingress teeno create karta hai
 router.post('/', async (req, res) => {
@@ -19,6 +20,23 @@ router.post('/', async (req, res) => {
       sandboxId,
       url: `http://${sandboxId}.preview.localhost`,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// sandbox ka current status check karta hai - ready hai ya nahi
+router.get('/:sandboxId/status', async (req, res) => {
+  try {
+    const { sandboxId } = req.params;
+    const pod = await coreApi.readNamespacedPod({
+      name: `sandbox-${sandboxId}`,
+      namespace: 'default',
+    });
+
+    const allReady = pod.status.containerStatuses?.every((c) => c.ready) ?? false;
+
+    res.json({ ready: allReady });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
