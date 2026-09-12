@@ -64,6 +64,17 @@ app.post('/file', (req, res) => {
   }
 });
 
+// DELETE /file?path=... - ek file ko delete karta hai
+app.delete('/file', (req, res) => {
+  try {
+    const filePath = path.join(PROJECT_ROOT, req.query.path);
+    fs.unlinkSync(filePath);
+    res.json({ message: 'File deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },

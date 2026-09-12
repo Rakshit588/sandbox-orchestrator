@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 
-// sandbox ki files ki list dikhata hai, click karne pe file select hoti hai
 function FileExplorer({ agentUrl, onFileSelect }) {
   const [files, setFiles] = useState([]);
 
@@ -15,7 +14,6 @@ function FileExplorer({ agentUrl, onFileSelect }) {
       .catch((err) => console.error('Failed to load files:', err));
   }
 
-  // naya file banata hai - naam poochkar, khali content ke saath server pe save karta hai
   async function createNewFile() {
     const fileName = prompt('Enter new file name (e.g. src/NewComponent.jsx):');
     if (!fileName) return;
@@ -26,10 +24,25 @@ function FileExplorer({ agentUrl, onFileSelect }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: fileName, content: '' }),
       });
-      loadFiles(); // list ko refresh kar raha hu taaki nayi file dikhe
-      onFileSelect(fileName); // nayi file ko turant editor me khol raha hu
+      loadFiles();
+      onFileSelect(fileName);
     } catch (err) {
       console.error('Failed to create file:', err);
+    }
+  }
+
+  // file delete karta hai, confirm poochne ke baad
+  async function deleteFile(filePath, e) {
+    e.stopPropagation(); // parent ke onClick (file open karne wale) ko trigger hone se roka
+    if (!confirm(`Delete ${filePath}?`)) return;
+
+    try {
+      await fetch(`${agentUrl}/file?path=${encodeURIComponent(filePath)}`, {
+        method: 'DELETE',
+      });
+      loadFiles();
+    } catch (err) {
+      console.error('Failed to delete file:', err);
     }
   }
 
@@ -45,9 +58,10 @@ function FileExplorer({ agentUrl, onFileSelect }) {
           <div
             key={file.path}
             onClick={() => onFileSelect(file.path)}
-            style={{ cursor: 'pointer', padding: '4px 0' }}
+            style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}
           >
-            {file.path}
+            <span>{file.path}</span>
+            <button onClick={(e) => deleteFile(file.path, e)}>x</button>
           </div>
         ))}
     </div>

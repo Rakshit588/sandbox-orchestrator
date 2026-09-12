@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 4000
 
 # build ke time files /build me hain - container start hote hi inhe shared volume (/app) me copy karunga, phir server start karunga
-CMD sh -c "cp -r /build/* /app/ 2>/dev/null; cp -r /build/.* /app/ 2>/dev/null; cd /build && node server.js"
+CMD sh -c "cp -r /build/* /app/ 2>/dev/null; cd /build && node server.js"
