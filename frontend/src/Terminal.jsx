@@ -4,44 +4,62 @@ import { FitAddon } from 'xterm-addon-fit';
 import { io } from 'socket.io-client';
 import 'xterm/css/xterm.css';
 
-// ye component ek sandbox ke comm-agent se connect hoke real terminal dikhata hai
 function TerminalComponent({ commAgentUrl }) {
-  const terminalRef = useRef(null); // is div me xterm render hoga
+  const terminalRef = useRef(null);
 
   useEffect(() => {
-    // xterm terminal instance bana raha hu
     const term = new XTerm({
       cursorBlink: true,
       theme: { background: '#1e1e1e' },
     });
 
-    // fit addon - terminal ko apne container ke size ke hisaab se fit karta hai
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.open(terminalRef.current);
     fitAddon.fit();
 
-    // comm-agent se socket.io connection bana raha hu
     const socket = io(commAgentUrl);
 
-    // jab server se output aaye, terminal me likh raha hu
     socket.on('output', (data) => {
       term.write(data);
     });
 
-    // jab user terminal me type kare, server ko bhej raha hu
     term.onData((data) => {
       socket.emit('input', data);
     });
 
-    // cleanup - component hatne pe connection aur terminal dono clean kar raha hu
+    // Ctrl+V se paste karne ke liye - clipboard se text padhke terminal ko bhej raha hu
+    term.attachCustomKeyEventHandler((event) => {
+      if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
+        navigator.clipboard.readText().then((text) => {
+          socket.emit('input', text);
+        });
+        return false; // browser ke default paste behavior ko rok raha hu
+      }
+      return true;
+    });
+
+    // right-click se copy karne ke liye - selected text ko clipboard me daal raha hu
+    terminalRef.current.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const selection = term.getSelection();
+      if (selection) {
+        navigator.clipboard.writeText(selection);
+      }
+    });
+
     return () => {
       socket.disconnect();
       term.dispose();
     };
   }, [commAgentUrl]);
 
-  return <div ref={terminalRef} style={{ height: '300px', marginTop: '10px' }} />;
+  return (
+  <div
+    ref={terminalRef}
+    style={{ height: '300px', border: '1px solid #3c3c3c', padding: '4px' }}
+  />
+);
 }
 
 export default TerminalComponent;

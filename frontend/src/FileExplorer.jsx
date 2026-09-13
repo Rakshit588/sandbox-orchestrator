@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 function FileExplorer({ agentUrl, onFileSelect }) {
   const [files, setFiles] = useState([]);
+  const [selectedPath, setSelectedPath] = useState(null);
 
   useEffect(() => {
     loadFiles();
@@ -25,7 +26,7 @@ function FileExplorer({ agentUrl, onFileSelect }) {
         body: JSON.stringify({ path: fileName, content: '' }),
       });
       loadFiles();
-      onFileSelect(fileName);
+      handleSelect(fileName);
     } catch (err) {
       console.error('Failed to create file:', err);
     }
@@ -41,27 +42,61 @@ function FileExplorer({ agentUrl, onFileSelect }) {
         method: 'DELETE',
       });
       loadFiles();
+      if (selectedPath === filePath) setSelectedPath(null);
     } catch (err) {
       console.error('Failed to delete file:', err);
     }
   }
 
+  function handleSelect(path) {
+    setSelectedPath(path);
+    onFileSelect(path);
+  }
+
+  // file extension ke hisaab se ek chhota icon/label deta hai
+  function getFileIcon(fileName) {
+    const ext = fileName.split('.').pop();
+    const icons = { jsx: '⚛', js: '📜', json: '{}', css: '🎨', html: '🌐', md: '📝' };
+    return icons[ext] || '📄';
+  }
+
   return (
-    <div style={{ width: '200px', borderRight: '1px solid gray', padding: '10px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h4>Files</h4>
-        <button onClick={createNewFile}>+ New</button>
+    <div style={{
+      width: '220px',
+      background: '#252526',
+      borderRight: '1px solid #3c3c3c',
+      padding: '10px 0',
+      fontSize: '13px',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px 8px' }}>
+        <span style={{ color: '#969696', fontWeight: 600, letterSpacing: '0.5px' }}>EXPLORER</span>
+        <button className="btn-primary" onClick={createNewFile} style={{ padding: '2px 8px', fontSize: '12px' }}>
+          + New
+        </button>
       </div>
       {files
         .filter((f) => f.type === 'file')
         .map((file) => (
           <div
             key={file.path}
-            onClick={() => onFileSelect(file.path)}
-            style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}
+            onClick={() => handleSelect(file.path)}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              padding: '4px 12px',
+              background: selectedPath === file.path ? '#37373d' : 'transparent',
+              color: selectedPath === file.path ? '#ffffff' : '#cccccc',
+            }}
           >
-            <span>{file.path}</span>
-            <button onClick={(e) => deleteFile(file.path, e)}>x</button>
+            <span>{getFileIcon(file.name)} {file.path}</span>
+            <button
+              onClick={(e) => deleteFile(file.path, e)}
+              style={{ background: 'none', border: 'none', color: '#969696', cursor: 'pointer' }}
+            >
+              ×
+            </button>
           </div>
         ))}
     </div>

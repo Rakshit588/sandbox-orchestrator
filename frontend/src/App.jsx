@@ -5,11 +5,12 @@ import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
 
 function App() {
-  const [sandboxes, setSandboxes] = useState([]); // saare active sandboxes ki list
-  const [activeSandboxId, setActiveSandboxId] = useState(null); // abhi kaunsa dikh raha hai
+  const [sandboxes, setSandboxes] = useState([]);
+  const [activeSandboxId, setActiveSandboxId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [iframeKey, setIframeKey] = useState(0);
+  const [activePanel, setActivePanel] = useState('editor'); // 'editor' ya 'preview'
 
   async function createSandbox() {
     setLoading(true);
@@ -19,12 +20,10 @@ function App() {
       });
       const data = await response.json();
 
-      // naya sandbox list me add kar raha hu, podReady flag ke saath
       const newSandbox = { ...data, podReady: false };
       setSandboxes((prev) => [...prev, newSandbox]);
       setActiveSandboxId(data.sandboxId);
 
-      // har 2 second me backend se poochta hu "ready hua kya", jab tak sach me ready na ho
       const pollInterval = setInterval(async () => {
         try {
           const statusRes = await fetch(
@@ -33,7 +32,7 @@ function App() {
           const statusData = await statusRes.json();
 
           if (statusData.ready) {
-            clearInterval(pollInterval); // ready ho gaya, ab polling band kar do
+            clearInterval(pollInterval);
             setSandboxes((prev) =>
               prev.map((sb) =>
                 sb.sandboxId === data.sandboxId ? { ...sb, podReady: true } : sb
@@ -45,7 +44,6 @@ function App() {
         }
       }, 2000);
 
-      // agar 60 second me bhi ready na ho, polling band kar do (safety net)
       setTimeout(() => clearInterval(pollInterval), 60000);
     } catch (err) {
       console.error('Failed to create sandbox:', err);
@@ -76,67 +74,138 @@ function App() {
 
   return (
     <div>
-      <h1>Instant IDE</h1>
-      <button onClick={createSandbox} disabled={loading}>
-        {loading ? 'Creating...' : 'Create Sandbox'}
-      </button>
-
-      {/* saare active sandboxes ki tab-jaisi list */}
-      <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-        {sandboxes.map((sb) => (
-          <div
-            key={sb.sandboxId}
-            style={{
-              padding: '6px 12px',
-              border: '1px solid gray',
-              cursor: 'pointer',
-              background: sb.sandboxId === activeSandboxId ? '#ddd' : 'white',
-            }}
-          >
-            <span onClick={() => setActiveSandboxId(sb.sandboxId)}>
-              {sb.sandboxId}
-            </span>
-            <button onClick={() => deleteSandbox(sb.sandboxId)} style={{ marginLeft: '8px' }}>
-              x
-            </button>
-          </div>
-        ))}
+      {/* Header - branding aur create button */}
+      <div className="app-header">
+        <h1>⚡ Instant IDE</h1>
+        <button className="btn-primary" onClick={createSandbox} disabled={loading}>
+          {loading ? 'Creating...' : '+ New Sandbox'}
+        </button>
       </div>
+
+      {/* Tabs - saare active sandboxes */}
+      {sandboxes.length > 0 && (
+        <div className="sandbox-tabs">
+          {sandboxes.map((sb) => (
+            <div
+              key={sb.sandboxId}
+              className={`sandbox-tab ${sb.sandboxId === activeSandboxId ? 'active' : ''}`}
+            >
+              <span onClick={() => setActiveSandboxId(sb.sandboxId)}>
+                {sb.sandboxId}
+              </span>
+              <button onClick={() => deleteSandbox(sb.sandboxId)}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {activeSandbox && (
         <div>
-          <p>Sandbox: {activeSandbox.sandboxId}</p>
-          <p>URL: {activeSandbox.url}</p>
-
           {!activeSandbox.podReady ? (
-            <p>Sandbox is starting up, please wait...</p>
+            <p style={{ padding: '20px', color: '#cccccc' }}>Sandbox is starting up, please wait...</p>
           ) : (
-            <div>
-              <button onClick={refreshPreview}>Refresh Preview</button>
-              <iframe
-                key={`${activeSandbox.sandboxId}-${iframeKey}`}
-                src={activeSandbox.url}
-                title="Sandbox Preview"
-                style={{ width: '100%', height: '400px', border: '1px solid gray', marginTop: '10px' }}
+            <div style={{ display: 'flex', height: 'calc(100vh - 90px)' }}>
+              {/* Left sidebar - File Explorer, poori height */}
+              <FileExplorer
+                agentUrl={`http://${activeSandbox.sandboxId}.agent.localhost`}
+                onFileSelect={setSelectedFile}
               />
 
-              <div style={{ display: 'flex', marginTop: '10px' }}>
-                <FileExplorer
-                  agentUrl={`http://${activeSandbox.sandboxId}.agent.localhost`}
-                  onFileSelect={setSelectedFile}
-                />
-                <CodeEditor
-                  agentUrl={`http://${activeSandbox.sandboxId}.agent.localhost`}
-                  filePath={selectedFile}
-                />
+              {/* Right side - editor/preview upar (tab-switched), terminal neeche */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  {/* Tab switcher - Editor ya Preview */}
+                  <div style={{ display: 'flex', background: '#252526', borderBottom: '1px solid #3c3c3c' }}>
+                    <button
+                      onClick={() => setActivePanel('editor')}
+                      style={{
+                        padding: '8px 16px',
+                        background: activePanel === 'editor' ? '#1e1e1e' : 'transparent',
+                        color: activePanel === 'editor' ? '#ffffff' : '#969696',
+                        border: 'none',
+                        borderTop: activePanel === 'editor' ? '2px solid #0e639c' : '2px solid transparent',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                      }}
+                    >
+                      Editor
+                    </button>
+                    <button
+                      onClick={() => setActivePanel('preview')}
+                      style={{
+                        padding: '8px 16px',
+                        background: activePanel === 'preview' ? '#1e1e1e' : 'transparent',
+                        color: activePanel === 'preview' ? '#ffffff' : '#969696',
+                        border: 'none',
+                        borderTop: activePanel === 'preview' ? '2px solid #0e639c' : '2px solid transparent',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                      }}
+                    >
+                      Preview
+                    </button>
+                    {activePanel === 'preview' && (
+                      <button
+                        className="btn-primary"
+                        onClick={refreshPreview}
+                        style={{ marginLeft: 'auto', marginRight: '8px', padding: '4px 10px', fontSize: '12px', alignSelf: 'center' }}
+                      >
+                        ↻ Refresh
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Jo bhi active hai, wahi poora space le */}
+                  <div style={{ flex: 1, overflow: 'auto', display: activePanel === 'editor' ? 'block' : 'none' }}>
+                    <CodeEditor
+                      agentUrl={`http://${activeSandbox.sandboxId}.agent.localhost`}
+                      filePath={selectedFile}
+                    />
+                  </div>
+                  <div style={{ flex: 1, display: activePanel === 'preview' ? 'flex' : 'none', flexDirection: 'column' }}>
+                    <iframe
+                      key={`${activeSandbox.sandboxId}-${iframeKey}`}
+                      src={activeSandbox.url}
+                      title="Sandbox Preview"
+                      style={{ flex: 1, border: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Terminal - bottom panel, fixed height */}
+                <div style={{ height: '220px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{
+                    background: '#252526',
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    color: '#969696',
+                    borderTop: '1px solid #3c3c3c',
+                  }}>
+                    TERMINAL
+                  </div>
+                  <TerminalComponent
+                    key={activeSandbox.sandboxId}
+                    commAgentUrl={`http://${activeSandbox.sandboxId}.agent.localhost`}
+                  />
+                </div>
               </div>
-
-              <TerminalComponent
-                key={activeSandbox.sandboxId}
-                commAgentUrl={`http://${activeSandbox.sandboxId}.agent.localhost`}
-              />
             </div>
           )}
+        </div>
+      )}
+
+      {/* Empty state - jab koi sandbox nahi hai */}
+      {sandboxes.length === 0 && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '60vh',
+          color: '#969696',
+        }}>
+          <h2 style={{ color: '#cccccc' }}>Welcome to Instant IDE</h2>
+          <p>Click "+ New Sandbox" above to spin up an isolated development environment.</p>
         </div>
       )}
     </div>
