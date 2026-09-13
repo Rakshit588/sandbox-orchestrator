@@ -38,6 +38,7 @@ function CodeEditor({ agentUrl, filePath }) {
         value={content}
         onChange={(value) => setContent(value)}
         theme="vs-dark"
+        options={{ automaticLayout: true }}
       />
     </div>
   );
