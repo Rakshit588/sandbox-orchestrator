@@ -33,7 +33,7 @@ function CodeEditor({ agentUrl, filePath }) {
     <div style={{ flex: 1 }}>
       <button onClick={saveFile}>Save</button>
       <Editor
-        height="400px"
+        height="100%"
         language="javascript"
         value={content}
         onChange={(value) => setContent(value)}
