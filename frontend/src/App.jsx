@@ -52,6 +52,55 @@ function App() {
     }
   }
 
+  // purane sandboxId se restore karta hai - naya sandbox banega S3 backup ke saath
+  async function restoreSandbox() {
+    const oldSandboxId = prompt('Enter the old Sandbox ID to restore from:');
+    if (!oldSandboxId) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3000/sandboxes/restore/${oldSandboxId}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        alert(`Restore failed: ${data.error}`);
+        return;
+      }
+
+      const newSandbox = { ...data, podReady: false };
+      setSandboxes((prev) => [...prev, newSandbox]);
+      setActiveSandboxId(data.sandboxId);
+
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch(
+            `http://localhost:3000/sandboxes/${data.sandboxId}/status`
+          );
+          const statusData = await statusRes.json();
+
+          if (statusData.ready) {
+            clearInterval(pollInterval);
+            setSandboxes((prev) =>
+              prev.map((sb) =>
+                sb.sandboxId === data.sandboxId ? { ...sb, podReady: true } : sb
+              )
+            );
+          }
+        } catch (err) {
+          console.error('Status check failed:', err);
+        }
+      }, 2000);
+
+      setTimeout(() => clearInterval(pollInterval), 60000);
+    } catch (err) {
+      console.error('Failed to restore sandbox:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function deleteSandbox(sandboxId) {
     try {
       await fetch(`http://localhost:3000/sandboxes/${sandboxId}`, {
@@ -77,9 +126,14 @@ function App() {
       {/* Header - branding aur create button */}
       <div className="app-header">
         <h1>⚡ Instant IDE</h1>
-        <button className="btn-primary" onClick={createSandbox} disabled={loading}>
-          {loading ? 'Creating...' : '+ New Sandbox'}
-        </button>
+        <div>
+          <button className="btn-primary" onClick={createSandbox} disabled={loading}>
+            {loading ? 'Creating...' : '+ New Sandbox'}
+          </button>
+          <button className="btn-primary" onClick={restoreSandbox} disabled={loading} style={{ marginLeft: '8px' }}>
+            ↺ Restore Sandbox
+          </button>
+        </div>
       </div>
 
       {/* Tabs - saare active sandboxes */}

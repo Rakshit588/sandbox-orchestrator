@@ -25,6 +25,27 @@ router.post('/', async (req, res) => {
   }
 });
 
+// purane sandboxId ki S3 backup se ek naya sandbox banata hai
+router.post('/restore/:oldSandboxId', async (req, res) => {
+  try {
+    const { oldSandboxId } = req.params;
+    const newSandboxId = Math.random().toString(36).substring(2, 8);
+
+    // naye sandbox ko banate waqt restoreFrom pass kar raha hu
+    await createSandboxPod(newSandboxId, oldSandboxId);
+    await createSandboxService(newSandboxId);
+    await createSandboxIngress(newSandboxId);
+
+    res.json({
+      message: 'Sandbox restored!',
+      sandboxId: newSandboxId,
+      url: `http://${newSandboxId}.preview.localhost`,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // sandbox ka current status check karta hai - ready hai ya nahi
 router.get('/:sandboxId/status', async (req, res) => {
   try {

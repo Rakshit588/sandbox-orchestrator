@@ -1,7 +1,27 @@
 const { coreApi } = require('./client');
 
 // naya sandbox pod create kar raha hu - teen containers saath chalte hain isme
-async function createSandboxPod(sandboxId) {
+// restoreFrom (optional) - agar diya hai, to sync-agent us purane sandbox ki files S3 se restore karega
+async function createSandboxPod(sandboxId, restoreFrom = null) {
+  const syncAgentEnv = [
+    { name: 'SANDBOX_ID', value: sandboxId },
+    {
+      name: 'AWS_ACCESS_KEY_ID',
+      valueFrom: { secretKeyRef: { name: 'aws-credentials', key: 'AWS_ACCESS_KEY_ID' } },
+    },
+    {
+      name: 'AWS_SECRET_ACCESS_KEY',
+      valueFrom: { secretKeyRef: { name: 'aws-credentials', key: 'AWS_SECRET_ACCESS_KEY' } },
+    },
+    { name: 'AWS_REGION', value: 'eu-north-1' },
+    { name: 'S3_BUCKET_NAME', value: 'instant-ide-sandbox-oggy2026' },
+  ];
+
+  // agar restoreFrom diya hai, to ek extra env variable add kar raha hu
+  if (restoreFrom) {
+    syncAgentEnv.push({ name: 'RESTORE_FROM', value: restoreFrom });
+  }
+
   const podSpec = {
     apiVersion: 'v1',
     kind: 'Pod',
@@ -10,7 +30,6 @@ async function createSandboxPod(sandboxId) {
       labels: { app: `sandbox-${sandboxId}` },
     },
     spec: {
-      // shared volume define kar raha hu - saare containers isse mount karenge
       volumes: [
         { name: 'project-files', emptyDir: {} },
       ],
@@ -37,19 +56,7 @@ async function createSandboxPod(sandboxId) {
           volumeMounts: [
             { name: 'project-files', mountPath: '/app' },
           ],
-          env: [
-            { name: 'SANDBOX_ID', value: sandboxId },
-            {
-              name: 'AWS_ACCESS_KEY_ID',
-              valueFrom: { secretKeyRef: { name: 'aws-credentials', key: 'AWS_ACCESS_KEY_ID' } },
-            },
-            {
-              name: 'AWS_SECRET_ACCESS_KEY',
-              valueFrom: { secretKeyRef: { name: 'aws-credentials', key: 'AWS_SECRET_ACCESS_KEY' } },
-            },
-            { name: 'AWS_REGION', value: 'eu-north-1' },
-            { name: 'S3_BUCKET_NAME', value: 'instant-ide-sandbox-oggy2026' },
-          ],
+          env: syncAgentEnv,
         },
       ],
     },
