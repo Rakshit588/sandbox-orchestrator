@@ -1,16 +1,26 @@
-# React + Vite
+# Instant IDE — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the **control panel** for Instant IDE, a Kubernetes-based sandbox orchestration system. It's a React (Vite) application that lets users create, manage, and interact with isolated, containerized development environments ("sandboxes") running on a local Kubernetes cluster.
 
-Currently, two official plugins are available:
+## What it does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Create/Restore Sandboxes** — spin up a new isolated dev environment, or restore a previous one from its S3 backup
+- **Multi-Sandbox Tabs** — manage several active sandboxes at once, switch between them
+- **Live Preview** — see the sandbox's running Vite dev server in an embedded iframe
+- **Code Editor** — a full in-browser code editor (Monaco, the engine behind VS Code) to read, edit, create, and delete files inside the sandbox
+- **Terminal** — a real, interactive terminal (via xterm.js + Socket.IO) connected to a live shell running inside the sandbox, with copy-paste support
 
-## React Compiler
+## How it connects to the rest of the system
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This frontend talks to two backend services:
+- The **Orchestrator API** (`sandbox-orchestrator` root project) — for creating, deleting, restoring, and checking the status of sandboxes
+- Each sandbox's own **Communication Agent** — for file operations and terminal access, reached via a per-sandbox subdomain (`<sandboxId>.agent.localhost`)
 
-## Expanding the ESLint configuration
+## Running locally
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
+
+Requires the Orchestrator backend, a local Kubernetes cluster (with the Nginx Ingress Controller and `aws-credentials` secret set up), and local wildcard DNS resolution (`*.localhost`) to be running — see the main project README for full setup.
